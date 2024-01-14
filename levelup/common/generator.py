@@ -118,10 +118,10 @@ class Generator(MixinMeta, ABC):
 
         # Colors
         # Sample colors from profile pic to use for default colors
-        base = (255,255,255)
+        base = (114,137,218)
         namecolor = (255,255,255)
         statcolor = (255,255,255)
-        lvlbarcolor = (114, 137, 218)
+        lvlbarcolor = (114,137,218)
         # Color distancing is more strict if user hasn't defined color
         namedistance = 200
         statdistance = 200
