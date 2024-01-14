@@ -925,10 +925,10 @@ class UserCommands(MixinMeta, ABC):
                 bg_image = bg if bg else await self.get_banner(user)
                 colors = users[user_id]["colors"]
                 usercolors = {
-                    "base": hex_to_rgb(str(user.colour)),
+                    "base": get_level_color(user),
                     "name": hex_to_rgb(colors["name"]) if colors["name"] else None,
                     "stat": hex_to_rgb(colors["stat"]) if colors["stat"] else None,
-                    "levelbar": hex_to_rgb(colors["levelbar"]) if colors["levelbar"] else None,
+                    "levelbar": get_level_color(user) if colors["levelbar"] else None,
                 }
 
                 args = {

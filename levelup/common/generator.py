@@ -123,12 +123,6 @@ class Generator(MixinMeta, ABC):
         )
 
         # Colors
-        # Sample colors from profile pic to use for default colors
-        invoking_member: Member = Member.ctx.author
-        base = get_level_color(invoking_member)
-        namecolor = (255, 255, 255)
-        statcolor = (255, 255, 255)
-        lvlbarcolor = get_level_color(invoking_member)
         # Color distancing is more strict if user hasn't defined color
         namedistance = 200
         statdistance = 200
