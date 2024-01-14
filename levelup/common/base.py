@@ -805,7 +805,7 @@ class UserCommands(MixinMeta, ABC):
         self.data[ctx.guild.id]["users"][user_id]["blur"] = not current
         await ctx.send(_("Your profile background blur has been set to ") + str(not current))
 
-    @commands.command(name="pf")
+    @commands.command(name="pf", aliases=["rank", "level"])
     @commands.guild_only()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def get_profile(self, ctx: commands.Context, *, user: discord.Member = None):
