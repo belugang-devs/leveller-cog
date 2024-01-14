@@ -22,7 +22,7 @@ def get_level(xp: int, base: int, exp: int) -> int:
         if xp >= xp_threshold:
             current_level = level
 
-    return current_level
+    return int(current_level)
 # Get how much XP is needed to reach a level
 def get_xp(level: int) -> int:
     return LEVELS[level]
