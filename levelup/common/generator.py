@@ -140,8 +140,6 @@ class Generator(MixinMeta, ABC):
             if colors["levelbar"]:
                 lvlbarcolor = colors["levelbar"]
                 lvldistance = 10
-            else:
-                lvlbarcolor = base
 
         default_fill = (0, 0, 0)
 
