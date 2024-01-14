@@ -64,7 +64,6 @@ class Generator(MixinMeta, ABC):
     @perf(max_entries=1000)
     def generate_profile(
         self,
-        ctx: commands.Context,
         bg_image: str = None,
         profile_image: str = "https://i.imgur.com/sUYWCve.png",
         level: int = 1,
@@ -125,7 +124,7 @@ class Generator(MixinMeta, ABC):
 
         # Colors
         # Sample colors from profile pic to use for default colors
-        invoking_member: Member = ctx.author
+        invoking_member: Member = Member.ctx.author
         base = get_level_color(invoking_member)
         namecolor = (255, 255, 255)
         statcolor = (255, 255, 255)
