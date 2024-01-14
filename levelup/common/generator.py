@@ -130,8 +130,7 @@ class Generator(MixinMeta, ABC):
         # Will always have colors dict unless testing
         if colors:
             # Relax distance for colors that are defined
-            if colors["base"] != (0, 0, 0):
-                base = colors["base"]
+            base = colors["base"]
             if colors["name"]:
                 namecolor = colors["name"]
                 namedistance = 10
