@@ -82,7 +82,7 @@ class Generator(MixinMeta, ABC):
         role_icon: str = None,
         font_name: str = None,
         render_gifs: bool = False,
-        blur: bool = False,
+        blur: bool = True,
     ):
         # get profile pic
         if profile_image:
@@ -118,11 +118,11 @@ class Generator(MixinMeta, ABC):
 
         # Colors
         # Sample colors from profile pic to use for default colors
-        rgbs = self.get_img_colors(profile, 8)
-        base = random.choice(rgbs)
-        namecolor = random.choice(rgbs)
-        statcolor = random.choice(rgbs)
-        lvlbarcolor = random.choice(rgbs)
+        rgbs = Rgb(r=255, g=255, b=255)
+        base = Rgb(r=255, g=255, b=255)
+        namecolor = Rgb(r=255, g=255, b=255)
+        statcolor = Rgb(r=255, g=255, b=255)
+        lvlbarcolor = Rgb(r=114, g=137, b=218)
         # Color distancing is more strict if user hasn't defined color
         namedistance = 200
         statdistance = 200
@@ -556,7 +556,7 @@ class Generator(MixinMeta, ABC):
         role_icon: str = None,
         font_name: str = None,
         render_gifs: bool = False,
-        blur: bool = False,
+        blur: bool = True,
     ):
         # Colors
         base = self.rand_rgb()
