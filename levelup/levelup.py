@@ -447,7 +447,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
             "full": True,
             "colors": {"name": None, "stat": None, "levelbar": None},
             "font": None,
-            "blur": False,
+            "blur": True,
         }
 
     def init_user_weekly(self, guild_id: int, user_id: str):
