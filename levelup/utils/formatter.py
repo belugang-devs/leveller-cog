@@ -4,7 +4,7 @@ import random
 from datetime import datetime, timedelta
 from io import StringIO
 from typing import List, Union
-from levels import levels
+from utils.levels import levels
 
 import discord
 from aiocache import cached
