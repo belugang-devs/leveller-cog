@@ -924,11 +924,12 @@ class UserCommands(MixinMeta, ABC):
             else:
                 bg_image = bg if bg else await self.get_banner(user)
                 colors = users[user_id]["colors"]
+                level_colour = get_level_color(user)
                 usercolors = {
-                    "base": get_level_color(user),
+                    "base": level_colour if level_colour is not None else (255, 255, 255),
                     "name": (255, 255, 255),
                     "stat": (255, 255, 255),
-                    "levelbar": get_level_color(user) if colors["levelbar"] else (255, 255, 255),
+                    "levelbar": level_colour if colors["levelbar"] else (255, 255, 255),
                 }
 
                 args = {
