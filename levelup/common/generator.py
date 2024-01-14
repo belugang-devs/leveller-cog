@@ -7,6 +7,7 @@ from math import ceil, sqrt
 from pathlib import Path
 from typing import List, Union
 from .base import get_level_color
+from discord import Member
 import colorgram
 import requests
 from perftracker import perf
@@ -118,10 +119,10 @@ class Generator(MixinMeta, ABC):
 
         # Colors
         # Sample colors from profile pic to use for default colors
-        base = get_level_color()
+        base = get_level_color(Member.ctx.author)
         namecolor = (255,255,255)
         statcolor = (255,255,255)
-        lvlbarcolor = get_level_color()
+        lvlbarcolor = get_level_color(Member.ctx.author)
         # Color distancing is more strict if user hasn't defined color
         namedistance = 200
         statdistance = 200
