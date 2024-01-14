@@ -6,7 +6,7 @@ from io import BytesIO
 from math import ceil, sqrt
 from pathlib import Path
 from typing import List, Union
-from base import get_level_color
+from .base import get_level_color
 import colorgram
 from discord import Member
 from discord.ext import commands
