@@ -25,7 +25,7 @@ def get_level(xp: int, base: int, exp: int) -> int:
     return int(current_level)
 # Get how much XP is needed to reach a level
 def get_xp(level: int) -> int:
-    return LEVELS[level]
+    return LEVELS[str(level)]
 
 # Estimate how much time it would take to reach a certain level based on current algorithm
 def time_to_level(
