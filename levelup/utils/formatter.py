@@ -69,7 +69,11 @@ def hex_to_rgb(color: str) -> tuple:
 
 def get_level_color(member: discord.Member) -> Tuple[int, int, int]:
     c = member.colour
-    return (c.r, c.g, c.b)
+    if c.r is not None:
+        colours = (c.r, c.g, c.b)
+    else:
+        colours = (255, 255, 255)
+    return colours
 
 
 def int_to_rgb(color: int) -> tuple:
