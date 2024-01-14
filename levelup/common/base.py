@@ -24,6 +24,7 @@ from levelup.utils.formatter import (
     get_content_from_url,
     get_leaderboard,
     get_level,
+    get_level_color,
     get_twemoji,
     get_user_position,
     get_xp,
