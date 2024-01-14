@@ -4,6 +4,7 @@ import random
 from datetime import datetime, timedelta
 from io import StringIO
 from typing import List, Union
+from levels import levels
 
 import discord
 from aiocache import cached
@@ -16,16 +17,16 @@ DPY2 = True if discord.__version__ > "1.7.3" else False
 _ = Translator("LevelUp", __file__)
 log = logging.getLogger("red.vrt.levelup.formatter")
 
-
 # Get a level that would be achieved from the amount of XP
 def get_level(xp: int, base: int, exp: int) -> int:
-    return int((xp / base) ** (1 / exp))
+    for level, xp_threshold in levels.items():
+        if xp >= xp_threshold:
+            current_level = level
 
-
+    return current_level
 # Get how much XP is needed to reach a level
-def get_xp(level: int, base: int, exp: int) -> int:
-    return math.ceil(base * (level**exp))
-
+def get_xp(level: int) -> int:
+    return levels[level]
 
 # Estimate how much time it would take to reach a certain level based on current algorithm
 def time_to_level(
@@ -35,7 +36,7 @@ def time_to_level(
     cooldown: int,
     xp_range: list,
 ) -> int:
-    xp_needed = get_xp(level, base, exp)
+    xp_needed = get_xp(level)
     xp_obtained = 0
     time_to_reach_level = 0  # Seconds
     while True:
@@ -164,7 +165,7 @@ def get_leaderboard(
                 # If this isnt pulled its global lb
                 for uid, data in lb.items():
                     if prestige := data["prestige"]:
-                        data["xp"] += prestige * get_xp(prestige_req, settings["base"], settings["exp"])
+                        data["xp"] += prestige * get_xp(prestige_req)
 
     if "v" in stat.lower():
         sorted_users = sorted(lb.items(), key=lambda x: x[1]["voice"], reverse=True)
@@ -302,7 +303,7 @@ async def get_user_position(conf: dict, user_id: str) -> dict:
         xp = int(data["xp"])
         prestige = int(data["prestige"])
         if prestige:
-            add_xp = get_xp(prestige_req, base, exp)
+            add_xp = get_xp(prestige_req)
             xp = int(xp + (prestige * add_xp))
         leaderboard[user] = xp
         total_xp += xp

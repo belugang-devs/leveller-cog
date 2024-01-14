@@ -1501,7 +1501,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
                     if replace:
                         if "l" in import_by.lower():
                             self.data[guild.id]["users"][user_id]["level"] = old_level
-                            new_xp = get_xp(old_level, base, exp)
+                            new_xp = get_xp(old_level)
                             self.data[guild.id]["users"][user_id]["xp"] = new_xp
                         else:
                             self.data[guild.id]["users"][user_id]["xp"] = old_exp
@@ -1510,7 +1510,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
                     else:
                         if "l" in import_by.lower():
                             self.data[guild.id]["users"][user_id]["level"] += old_level
-                            new_xp = get_xp(self.data[guild.id]["users"][user_id]["level"], base, exp)
+                            new_xp = get_xp(self.data[guild.id]["users"][user_id]["level"])
                             self.data[guild.id]["users"][user_id]["xp"] = new_xp
                         else:
                             self.data[guild.id]["users"][user_id]["xp"] += old_exp
@@ -1693,7 +1693,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
                 if replace:  # Replace stats
                     if "l" in import_by.lower():
                         self.data[ctx.guild.id]["users"][uid]["level"] = lvl
-                        newxp = get_xp(lvl, base, exp)
+                        newxp = get_xp(lvl)
                         self.data[ctx.guild.id]["users"][uid]["xp"] = newxp
                     else:
                         self.data[ctx.guild.id]["users"][uid]["xp"] = xp
@@ -1703,7 +1703,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
                 else:  # Add stats
                     if "l" in import_by.lower():
                         self.data[ctx.guild.id]["users"][uid]["level"] += lvl
-                        newxp = get_xp(self.data[ctx.guild.id]["users"][uid]["level"], base, exp)
+                        newxp = get_xp(self.data[ctx.guild.id]["users"][uid]["level"])
                         self.data[ctx.guild.id]["users"][uid]["xp"] = newxp
                     else:
                         self.data[ctx.guild.id]["users"][uid]["xp"] += xp
@@ -1828,7 +1828,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
                 if replace:  # Replace stats
                     if "l" in import_by.lower():
                         self.data[ctx.guild.id]["users"][uid]["level"] = lvl
-                        newxp = get_xp(lvl, base, exp)
+                        newxp = get_xp(lvl)
                         self.data[ctx.guild.id]["users"][uid]["xp"] = newxp
                     else:
                         self.data[ctx.guild.id]["users"][uid]["xp"] = xp
@@ -1841,7 +1841,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
                 else:  # Add stats
                     if "l" in import_by.lower():
                         self.data[ctx.guild.id]["users"][uid]["level"] += lvl
-                        newxp = get_xp(self.data[ctx.guild.id]["users"][uid]["level"], base, exp)
+                        newxp = get_xp(self.data[ctx.guild.id]["users"][uid]["level"])
                         self.data[ctx.guild.id]["users"][uid]["xp"] = newxp
                     else:
                         self.data[ctx.guild.id]["users"][uid]["xp"] += xp
@@ -2112,7 +2112,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
                     if level:
                         base = self.data[guild.id]["base"]
                         exp = self.data[guild.id]["exp"]
-                        xp = get_xp(level, base, exp)
+                        xp = get_xp(level)
                         self.data[guild.id]["users"][user_id]["level"] = int(level)
                         self.data[guild.id]["users"][user_id]["xp"] = xp
 
@@ -2468,7 +2468,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
 
         base = conf["base"]
         exp = conf["exp"]
-        xp = get_xp(int(level), base, exp)
+        xp = get_xp(int(level))
         conf["users"][uid]["level"] = int(level)
         conf["users"][uid]["xp"] = xp
         txt = _("User ") + user.name + _(" is now level ") + str(level)
@@ -2598,7 +2598,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         x = []
         y = []
         for level in range(1, 21):
-            xp = get_xp(level, base, exp)
+            xp = get_xp(level)
             time = time_to_level(level, base, exp, cd, xp_range)
             time = time_formatter(time)
             txt += _("- lvl {}, {} xp, {}\n").format(level, xp, time)
@@ -3281,7 +3281,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         user = users[uid]
         level = user["level"]
         level = level + 1
-        xp = get_xp(level, base, exp)
+        xp = get_xp(level, base, ex)
         self.data[gid]["users"][uid]["xp"] = xp
         await asyncio.sleep(2)
         txt = _("Forced ") + person.name + _(" to level up!")
@@ -3306,7 +3306,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         user = users[uid]
         level = user["level"]
         level = level - 1
-        xp = get_xp(level, base, exp)
+        xp = get_xp(level)
         self.data[gid]["users"][uid]["xp"] = xp
         await asyncio.sleep(2)
         txt = _("Forced ") + person.name + _(" to level down!")

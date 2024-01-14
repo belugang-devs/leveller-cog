@@ -867,8 +867,8 @@ class UserCommands(MixinMeta, ABC):
 
         # Calculate remaining needed stats
         next_level = level + 1
-        xp_prev = get_xp(level, base=conf["base"], exp=conf["exp"])
-        xp_needed = get_xp(next_level, base=conf["base"], exp=conf["exp"])
+        xp_prev = get_xp(level)
+        xp_needed = get_xp(next_level)
 
         user_xp_progress = xp - xp_prev
         next_xp_diff = xp_needed - xp_prev
@@ -1031,7 +1031,7 @@ class UserCommands(MixinMeta, ABC):
                 )
 
         current_xp = user["xp"]
-        xp_at_prestige = get_xp(required_level, conf["base"], conf["exp"])
+        xp_at_prestige = get_xp(required_level)
         leftover_xp = current_xp - xp_at_prestige if current_xp > xp_at_prestige else 0
         newlevel = get_level(leftover_xp, conf["base"], conf["exp"]) if leftover_xp > 0 else 1
 
