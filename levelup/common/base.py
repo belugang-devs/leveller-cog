@@ -930,7 +930,7 @@ class UserCommands(MixinMeta, ABC):
                     "name": (255, 255, 255),
                     "stat": (255, 255, 255),
                     # "levelbar": level_colour if colors["levelbar"] else (255, 255, 255),
-                    "levelbar: level_colour
+                    "levelbar": level_colour,
                 }
 
                 args = {
