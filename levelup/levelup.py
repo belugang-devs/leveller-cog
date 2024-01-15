@@ -39,6 +39,7 @@ from levelup.utils.formatter import (
     get_attachments,
     get_content_from_url,
     get_level,
+    get_level_color,
     get_next_reset,
     get_twemoji,
     get_xp,
@@ -435,6 +436,9 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
     def init_user(self, guild_id: int, user_id: str):
         if user_id in self.data[guild_id]["users"]:
             return
+        users = self.data[guild_id]["users"]
+        user = users[user_id]
+        level_colour = get_level_color(user)
         self.data[guild_id]["users"][user_id] = {
             "xp": 0,
             "voice": 0,  # Seconds
@@ -445,7 +449,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
             "stars": 0,
             "background": "random",
             "full": True,
-            "colors": {"name": (255,255,255), "stat": (255,255,255), "levelbar": None},
+            "colors": {"name": (255,255,255), "stat": (255,255,255), "levelbar": level_colour},
             "font": None,
             "blur": True,
         }
