@@ -898,86 +898,85 @@ class UserCommands(MixinMeta, ABC):
         bulb_emoji = get_emoji("bulb")
         money_emoji = get_emoji("money")
 
-        async with ctx.typing():
-            if not usepics:
-                msg = f"{level_emoji}｜" + _("Level ") + humanize_number(level) + "\n"
-                if prestige:
-                    msg += f"{trophy_emoji}｜" + _("Prestige ") + humanize_number(prestige) + f" {emoji['str']}\n"
-                msg += f"{star_emoji}｜{humanize_number(stars)}" + _(" stars\n")
-                msg += f"{chat_emoji}｜{humanize_number(messages)}" + _(" messages sent\n")
-                msg += f"{mic_emoji}｜{time_formatter(voice)}" + _(" in voice\n")
-                msg += f"{bulb_emoji}｜{humanize_number(user_xp_progress)}/{humanize_number(next_xp_diff)} Exp ({humanize_number(xp)} total)\n"
-                if showbal:
-                    msg += f"{money_emoji}｜{humanize_number(bal)} {currency_name}"
-                em = discord.Embed(description=msg, color=user.color)
-                footer = _("Rank ") + position + _(", with ") + str(percentage) + _("% of global server Exp")
-                author_name = _("{}'s Profile").format(user.display_name)
-                em.set_author(name=author_name, icon_url=pfp)
-                em.set_footer(text=footer, icon_url=role_icon)
-                em.add_field(name=_("Progress"), value=box(lvlbar, "py"))
+        if not usepics:
+            msg = f"{level_emoji}｜" + _("Level ") + humanize_number(level) + "\n"
+            if prestige:
+                msg += f"{trophy_emoji}｜" + _("Prestige ") + humanize_number(prestige) + f" {emoji['str']}\n"
+            msg += f"{star_emoji}｜{humanize_number(stars)}" + _(" stars\n")
+            msg += f"{chat_emoji}｜{humanize_number(messages)}" + _(" messages sent\n")
+            msg += f"{mic_emoji}｜{time_formatter(voice)}" + _(" in voice\n")
+            msg += f"{bulb_emoji}｜{humanize_number(user_xp_progress)}/{humanize_number(next_xp_diff)} Exp ({humanize_number(xp)} total)\n"
+            if showbal:
+                msg += f"{money_emoji}｜{humanize_number(bal)} {currency_name}"
+            em = discord.Embed(description=msg, color=user.color)
+            footer = _("Rank ") + position + _(", with ") + str(percentage) + _("% of global server Exp")
+            author_name = _("{}'s Profile").format(user.display_name)
+            em.set_author(name=author_name, icon_url=pfp)
+            em.set_footer(text=footer, icon_url=role_icon)
+            em.add_field(name=_("Progress"), value=box(lvlbar, "py"))
 
+            try:
+                await ctx.reply(embed=em, mention_author=mention)
+            except discord.HTTPException:
+                await ctx.send(embed=em)
+
+        else:
+            bg_image = bg if bg else await self.get_banner(user)
+            colors = users[user_id]["colors"]
+            level_colour = get_level_color(user)
+            usercolors = {
+                "base": level_colour if level_colour is not None else (255, 255, 255),
+                "name": (255, 255, 255),
+                "stat": (255, 255, 255),
+                # "levelbar": level_colour if colors["levelbar"] else (255, 255, 255),
+                "levelbar": level_colour,
+            }
+
+            args = {
+                "bg_image": bg_image,  # Background image link
+                "profile_image": pfp,  # User profile picture link
+                "level": level,  # User current level
+                "prev_xp": xp_prev,  # Preveious levels cap
+                "user_xp": xp,  # User current xp
+                "next_xp": xp_needed,  # xp required for next level
+                "user_position": position,  # User position in leaderboard
+                "user_name": user.name,  # username with discriminator
+                "user_status": str(user.status).strip(),  # User status eg. online, offline, idle, streaming, dnd
+                "colors": usercolors,  # User's color
+                "messages": humanize_number(messages),
+                "voice": time_formatter(voice),
+                "prestige": prestige,
+                "emoji": emoji["url"] if emoji and isinstance(emoji, dict) else None,
+                "stars": stars,
+                "balance": bal if showbal else 0,
+                "currency": currency_name,
+                "role_icon": role_icon,
+                "font_name": font,
+                "render_gifs": self.render_gifs,
+                "blur": blur,
+            }
+            start = perf_counter()
+            file = await self.get_or_fetch_profile(user, args, full)
+            rtime = round((perf_counter() - start) * 1000)
+            if not file:
+                return await ctx.send("Failed to generate profile image :( try again in a bit")
+            start2 = perf_counter()
+            try:
+                await ctx.reply(file=file, mention_author=mention)
+            except Exception as e:
+                if "In message_reference: Unknown message" not in str(e):
+                    log.error(f"Failed to send profile pic: {e}")
                 try:
-                    await ctx.reply(embed=em, mention_author=mention)
-                except discord.HTTPException:
-                    await ctx.send(embed=em)
-
-            else:
-                bg_image = bg if bg else await self.get_banner(user)
-                colors = users[user_id]["colors"]
-                level_colour = get_level_color(user)
-                usercolors = {
-                    "base": level_colour if level_colour is not None else (255, 255, 255),
-                    "name": (255, 255, 255),
-                    "stat": (255, 255, 255),
-                    # "levelbar": level_colour if colors["levelbar"] else (255, 255, 255),
-                    "levelbar": level_colour,
-                }
-
-                args = {
-                    "bg_image": bg_image,  # Background image link
-                    "profile_image": pfp,  # User profile picture link
-                    "level": level,  # User current level
-                    "prev_xp": xp_prev,  # Preveious levels cap
-                    "user_xp": xp,  # User current xp
-                    "next_xp": xp_needed,  # xp required for next level
-                    "user_position": position,  # User position in leaderboard
-                    "user_name": user.name,  # username with discriminator
-                    "user_status": str(user.status).strip(),  # User status eg. online, offline, idle, streaming, dnd
-                    "colors": usercolors,  # User's color
-                    "messages": humanize_number(messages),
-                    "voice": time_formatter(voice),
-                    "prestige": prestige,
-                    "emoji": emoji["url"] if emoji and isinstance(emoji, dict) else None,
-                    "stars": stars,
-                    "balance": bal if showbal else 0,
-                    "currency": currency_name,
-                    "role_icon": role_icon,
-                    "font_name": font,
-                    "render_gifs": self.render_gifs,
-                    "blur": blur,
-                }
-                start = perf_counter()
-                file = await self.get_or_fetch_profile(user, args, full)
-                rtime = round((perf_counter() - start) * 1000)
-                if not file:
-                    return await ctx.send("Failed to generate profile image :( try again in a bit")
-                start2 = perf_counter()
-                try:
-                    await ctx.reply(file=file, mention_author=mention)
+                    file = await self.get_or_fetch_profile(user, args, full)
+                    if mention:
+                        await ctx.send(ctx.author.mention, file=file)
+                    else:
+                        await ctx.send(file=file)
                 except Exception as e:
-                    if "In message_reference: Unknown message" not in str(e):
-                        log.error(f"Failed to send profile pic: {e}")
-                    try:
-                        file = await self.get_or_fetch_profile(user, args, full)
-                        if mention:
-                            await ctx.send(ctx.author.mention, file=file)
-                        else:
-                            await ctx.send(file=file)
-                    except Exception as e:
-                        log.error(f"Failed AGAIN to send profile pic: {e}")
-                mtime = round((perf_counter() - start2) * 1000)
-                if ctx.author.id == 350053505815281665:
-                    log.info(f"Render time: {humanize_number(rtime)}ms\n" f"Send Time: {humanize_number(mtime)}ms")
+                    log.error(f"Failed AGAIN to send profile pic: {e}")
+            mtime = round((perf_counter() - start2) * 1000)
+            if ctx.author.id == 350053505815281665:
+                log.info(f"Render time: {humanize_number(rtime)}ms\n" f"Send Time: {humanize_number(mtime)}ms")
 
     @commands.command(name="prestige")
     @commands.guild_only()
