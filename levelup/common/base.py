@@ -856,7 +856,7 @@ class UserCommands(MixinMeta, ABC):
             usercolors = {
                 "base": level_colour if level_colour is not None else (255, 255, 255),
                 "name": colors["name"],
-                "stat": colors["name"],
+                "stat": colors["stat"],
                 # "levelbar": level_colour if colors["levelbar"] else (255, 255, 255),
                 "levelbar": level_colour,
             }
