@@ -299,6 +299,16 @@ class Generator(MixinMeta, ABC):
             stats_size -= 1
             stats_font = ImageFont.truetype(base_font, stats_size)
 
+        # Get status image and paste to profile
+        blank = Image.new("RGBA", card.size, (255, 255, 255, 0))
+        status = (
+            self.status[user_status]
+            if user_status in self.status
+            else self.status["offline"]
+        )
+        status_img = Image.open(status)
+        status = status_img.convert("RGBA").resize((60, 60), Image.Resampling.NEAREST)
+
         # Role icon
         role_bytes = self.get_image_content_from_url(role_icon) if role_icon else None
         if role_bytes:
