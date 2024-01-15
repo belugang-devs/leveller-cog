@@ -417,17 +417,6 @@ class Generator(MixinMeta, ABC):
             stroke_fill=statstxtfill,
         )
 
-        # Stars
-        draw.text(
-            (star_text_x, star_text_y),
-            stars,
-            namecolor,
-            font=star_font,
-            anchor="lt",
-            stroke_width=stroke_width,
-            stroke_fill=namefill,
-        )
-
         # pfp border - draw at 4x and resample down to 1x for nice smooth circles then paste to the image
         circle_img = Image.new("RGBA", (1600, 1600))
         pfp_border = ImageDraw.Draw(circle_img)
