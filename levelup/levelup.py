@@ -445,7 +445,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
             "stars": 0,
             "background": "random",
             "full": True,
-            "colors": {"name": None, "stat": None, "levelbar": None},
+            "colors": {"name": (255,255,255), "stat": (255,255,255), "levelbar": None},
             "font": None,
             "blur": True,
         }
