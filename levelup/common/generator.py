@@ -364,7 +364,7 @@ class Generator(MixinMeta, ABC):
                 font=stats_font, # for consistency with stats font size
                 # anchor="lt",
                 stroke_width=1,
-                stroke_fill=colors["name"],
+                stroke_fill=statstxtfill,
                 emoji_scale_factor=emoji_scale,
                 emoji_position_offset=(0, username_emoji_y),
             )
