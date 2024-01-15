@@ -858,7 +858,7 @@ class UserCommands(MixinMeta, ABC):
                 "name": hex_to_rgb(colors["name"]) if colors["name"] else (255,255,255),
                 "stat": hex_to_rgb(colors["stat"]) if colors["stat"] else (255,255,255),
                 # "levelbar": level_colour if colors["levelbar"] else (255, 255, 255),
-                "levelbar": level_colour,
+                "levelbar": hex_to_rgb(colors["levelbar"]) if colors["levelbar"] else level_colour,
             }
 
             args = {
