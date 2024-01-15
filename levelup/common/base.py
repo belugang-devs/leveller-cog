@@ -869,7 +869,7 @@ class UserCommands(MixinMeta, ABC):
                 "user_xp": xp,  # User current xp
                 "next_xp": xp_needed,  # xp required for next level
                 "user_position": position,  # User position in leaderboard
-                "user_name": user.nick,  # username with discriminator
+                "user_name": user.display_name,  # username with discriminator
                 "user_status": str(user.status).strip(),  # User status eg. online, offline, idle, streaming, dnd
                 "colors": usercolors,  # User's color
                 "messages": humanize_number(messages),
