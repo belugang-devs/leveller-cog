@@ -855,8 +855,8 @@ class UserCommands(MixinMeta, ABC):
             level_colour = get_level_color(user)
             usercolors = {
                 "base": level_colour if level_colour is not None else (255, 255, 255),
-                "name": colors["name"],
-                "stat": colors["stat"],
+                "name": hex_to_rgb(colors["name"]) if colors["name"] else (255,255,255),
+                "stat": hex_to_rgb(colors["stat"]) if colors["stat"] else (255,255,255),
                 # "levelbar": level_colour if colors["levelbar"] else (255, 255, 255),
                 "levelbar": level_colour,
             }
