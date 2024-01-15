@@ -358,7 +358,7 @@ class Generator(MixinMeta, ABC):
             username_bbox = name_font.getbbox(user_name)
             username_emoji_y = username_bbox[3] - name_size
             pilmoji.text(
-                (bar_start + 10, name_y + 10),
+                (bar_start + 10, name_y + 100),
                 user_name,
                 namecolor,
                 font=stats_font, # for consistency with stats font size
