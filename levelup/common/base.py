@@ -167,77 +167,6 @@ class UserCommands(MixinMeta, ABC):
             banner_url = f"https://cdn.discordapp.com/banners/{user.id}/{banner_id}?size=1024"
             return banner_url
 
-    @commands.command(name="stars", aliases=["givestar", "addstar", "thanks"])
-    @commands.guild_only()
-    async def give_star(self, ctx: commands.Context, *, user: discord.Member = None):
-        """
-        Reward a good noodle
-        Give a star to a user for being a good noodle
-        """
-        now = datetime.datetime.now()
-
-        star_giver = str(ctx.author.id)
-        guild_id = ctx.guild.id
-
-        if guild_id not in self.data:
-            return await ctx.send(_("Cache not loaded yet, wait a few more seconds."))
-
-        if guild_id not in self.stars:
-            self.stars[guild_id] = {}
-
-        if not user:
-            if star_giver in self.stars[guild_id]:
-                # If no user is given and they have a cooldown, show time left
-                cooldown = self.data[guild_id]["starcooldown"]
-                lastused = self.stars[guild_id][star_giver]
-                td = now - lastused
-                td = td.total_seconds()
-                if td < cooldown:
-                    time_left = cooldown - td
-                    tstring = time_formatter(time_left)
-                    msg = _("You can give more stars in {}").format(f"**{tstring}**")
-                    return await ctx.send(msg)
-                else:
-                    msg = _("You can give more stars now! Just mention a user in this command.")
-                    return await ctx.send(msg)
-            else:
-                # If no user is given and they have no cooldown, show help
-                return await ctx.send_help()
-
-        if ctx.author == user:
-            return await ctx.send(_("You can't give stars to yourself!"))
-        if user.bot:
-            return await ctx.send(_("You can't give stars to a bot!"))
-
-        if star_giver not in self.stars[guild_id]:
-            self.stars[guild_id][star_giver] = now
-        else:
-            cooldown = self.data[guild_id]["starcooldown"]
-            lastused = self.stars[guild_id][star_giver]
-            td = now - lastused
-            td = td.total_seconds()
-            if td > cooldown:
-                self.stars[guild_id][star_giver] = now
-            else:
-                time_left = cooldown - td
-                tstring = time_formatter(time_left)
-                msg = _("You need to wait ") + f"**{tstring}**" + _(" before you can give more stars!")
-                return await ctx.send(msg)
-
-        mention = self.data[guild_id]["mention"]
-        users = self.data[guild_id]["users"]
-        user_id = str(user.id)
-        if user_id not in users:
-            return await ctx.send(_("No data available for that user yet!"))
-        self.data[guild_id]["users"][user_id]["stars"] += 1
-        if self.data[guild_id]["weekly"]["on"]:
-            if guild_id not in self.data[guild_id]["weekly"]["users"]:
-                self.init_user_weekly(guild_id, user_id)
-            self.data[guild_id]["weekly"]["users"][user_id]["stars"] += 1
-
-        name = user.mention if mention else f"**{user.name}**"
-        await ctx.send(_("You just gave a star to {}!").format(name))
-
     # For testing purposes
     @commands.command(name="mocklvl", hidden=True)
     async def get_lvl_test(self, ctx, *, user: discord.Member = None):
@@ -1102,9 +1031,6 @@ class UserCommands(MixinMeta, ABC):
         """
         if not stat:
             stat = "exp"
-        if "star" in stat.lower():
-            txt = _("Use the `") + str(ctx.clean_prefix) + _("startop` command for that")
-            return await ctx.send(txt)
 
         if global_stats:
             conf = {"users": {}, "weekly": {"users": {}}}
@@ -1137,96 +1063,6 @@ class UserCommands(MixinMeta, ABC):
         else:
             await menu(ctx, embeds, DEFAULT_CONTROLS)
 
-    @commands.command(name="startop", aliases=["starlb"])
-    @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True)
-    async def star_leaderboard(
-        self,
-        ctx: commands.Context,
-        global_stars: Optional[bool] = False,
-    ):
-        """View the star leaderboard"""
-        if global_stars:
-            conf = {"users": {}, "weekly": {"users": {}}}
-            for data in self.data.values():
-                # Load user stats
-                for uid, stats in data["users"].items():
-                    if uid in conf["users"]:
-                        conf["users"][uid]["stars"] += stats["stars"]
-                    else:
-                        conf["users"][uid] = {"stars": stats["stars"]}
-        else:
-            conf = self.data[ctx.guild.id]
-
-        embeds = []
-        leaderboard = {}
-        total_stars = 0
-        for user, data in conf["users"].items():
-            if "stars" in data:
-                stars = data["stars"]
-                if stars:
-                    leaderboard[user] = stars
-                    total_stars += stars
-        if not leaderboard:
-            return await ctx.send(_("Nobody has stars yet 😕"))
-        sorted_users = sorted(leaderboard.items(), key=lambda x: x[1], reverse=True)
-
-        # Get your place in the LB
-        you = ""
-        for i in sorted_users:
-            uid = i[0]
-            if str(uid) == str(ctx.author.id):
-                i = sorted_users.index(i)
-                you = f"You: {i + 1}/{len(sorted_users)}\n"
-
-        if DPY2:
-            icon = ctx.guild.icon
-        else:
-            icon = ctx.guild.icon_url
-
-        pages = math.ceil(len(sorted_users) / 10)
-        start = 0
-        stop = 10
-        title = _("Global Star Leaderboard") if global_stars else _("Star Leaderboard")
-        base_desc = _("Total ⭐'s: {}\n").format(f"`{humanize_number(total_stars)}`")
-
-        for p in range(pages):
-            if stop > len(sorted_users):
-                stop = len(sorted_users)
-            txt = ""
-            for i in range(start, stop, 1):
-                uid = sorted_users[i][0]
-                user = ctx.guild.get_member(int(uid)) or self.bot.get_user(int(uid))
-                if user:
-                    user = user.name
-                else:
-                    user = uid
-                stars = sorted_users[i][1]
-                txt += f"{i + 1}. {user} ({stars})\n"
-
-            embed = discord.Embed(
-                title=title,
-                description=base_desc + box(txt, lang="python"),
-                color=discord.Color.random(),
-            )
-
-            if you:
-                embed.set_footer(text=_("Pages ") + f"{p + 1}/{pages} ｜ {you}", icon_url=icon)
-            else:
-                embed.set_footer(text=_("Pages ") + f"{p + 1}/{pages}", icon_url=icon)
-            embeds.append(embed)
-            start += 10
-            stop += 10
-
-        if embeds:
-            if len(embeds) == 1:
-                embed = embeds[0]
-                await ctx.send(embed=embed)
-            else:
-                await menu(ctx, embeds, DEFAULT_CONTROLS)
-        else:
-            return await ctx.send(_("No user data yet!"))
-
     @commands.command(name="weekly")
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
@@ -1241,7 +1077,7 @@ class UserCommands(MixinMeta, ABC):
 
         **Arguments**
         `stat`: What kind of stat to display the weekly leaderboard for
-        - Valid options are `exp`, `messages`, `stars`, and `voice`
+        - Valid options are `exp`, `messages`, and `voice`
 
         `global_stats`: Include stats for all servers.
 

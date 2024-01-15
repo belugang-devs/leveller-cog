@@ -152,12 +152,6 @@ class Generator(MixinMeta, ABC):
         bar_bottom = 420
         circle_x = 60
         circle_y = 75
-
-        star_text_x = 960
-        star_text_y = 35
-        star_icon_x = 900
-        star_icon_y = 30
-
         stroke_width = 2
 
         iters = 0
@@ -305,22 +299,6 @@ class Generator(MixinMeta, ABC):
             stats_size -= 1
             stats_font = ImageFont.truetype(base_font, stats_size)
 
-        star_fontsize = 60
-        star_font = ImageFont.truetype(base_font, star_fontsize)
-        while (star_font.getlength(stars) + star_text_x) > final.width - 10:
-            star_fontsize -= 1
-            star_font = ImageFont.truetype(base_font, star_fontsize)
-
-        # Get status and star image and paste to profile
-        blank = Image.new("RGBA", card.size, (255, 255, 255, 0))
-        status = (
-            self.status[user_status]
-            if user_status in self.status
-            else self.status["offline"]
-        )
-        status_img = Image.open(status)
-        status = status_img.convert("RGBA").resize((60, 60), Image.Resampling.NEAREST)
-        star = Image.open(self.star).resize((50, 50), Image.Resampling.NEAREST)
         # Role icon
         role_bytes = self.get_image_content_from_url(role_icon) if role_icon else None
         if role_bytes:
@@ -345,8 +323,6 @@ class Generator(MixinMeta, ABC):
             pr_y = pmiddle - int(stats_size / 2)
             blank.paste(prestige_img, (pr_x, pr_y))
 
-        # Paste star icon
-        blank.paste(star, (star_icon_x, star_icon_y))
         # New final
         final = Image.alpha_composite(final, blank)
 
