@@ -71,7 +71,8 @@ class Generator(MixinMeta, ABC):
         user_xp: int = 0,
         next_xp: int = 100,
         user_position: str = "1",
-        user_name: str = "Unknown#0117",
+        user_display_name: str = "Unknown#0117",
+        user_name: str = "Unknown",
         user_status: str = "online",
         colors: dict = None,
         messages: str = "0",
@@ -266,12 +267,12 @@ class Generator(MixinMeta, ABC):
         # Setup font sizes
         name_size = 60
         name_font = ImageFont.truetype(base_font, name_size)
-        while (name_font.getlength(user_name) + bar_start + 20) > 900:
+        while (name_font.getlength(user_display_name) + bar_start + 20) > 900:
             name_size -= 1
             name_font = ImageFont.truetype(base_font, name_size)
             name_y += 0.1
         name_y = round(name_y)
-        nameht = name_font.getbbox(user_name)
+        nameht = name_font.getbbox(user_display_name)
         name_y = name_y - int(nameht[1] * 0.6)
 
         emoji_scale = 1.2
@@ -340,11 +341,11 @@ class Generator(MixinMeta, ABC):
         # Render name and credits text through pilmoji in case there are emojis
         with Pilmoji(final) as pilmoji:
             # Name text
-            name_bbox = name_font.getbbox(user_name)
+            name_bbox = name_font.getbbox(user_display_name)
             name_emoji_y = name_bbox[3] - name_size
             pilmoji.text(
                 (bar_start + 10, name_y),
-                user_name,
+                user_display_name,
                 namecolor,
                 font=name_font,
                 # anchor="lt",
@@ -352,6 +353,20 @@ class Generator(MixinMeta, ABC):
                 stroke_fill=colors["name"],
                 emoji_scale_factor=emoji_scale,
                 emoji_position_offset=(0, name_emoji_y),
+            )
+
+            username_bbox = name_font.getbbox(user_name)
+            username_emoji_y = username_bbox[3] - name_size
+            pilmoji.text(
+                (bar_start + 10, name_y + 10),
+                user_name,
+                namecolor,
+                font=stats_font, # for consistency with stats font size
+                # anchor="lt",
+                stroke_width=1,
+                stroke_fill=colors["name"],
+                emoji_scale_factor=emoji_scale,
+                emoji_position_offset=(0, username_emoji_y),
             )
             # Balance
             if balance:
@@ -537,7 +552,7 @@ class Generator(MixinMeta, ABC):
         user_xp: int = 0,
         next_xp: int = 100,
         user_position: str = "1",
-        user_name: str = "Unknown#0117",
+        user_display_name: str = "Unknown#0117",
         user_status: str = "online",
         colors: dict = None,
         messages: str = "0",
@@ -668,7 +683,7 @@ class Generator(MixinMeta, ABC):
         exp = f"Exp: {get_str(user_xp_progress)}/{get_str(next_xp_diff)} ({get_str(user_xp)} total)"
         messages = _("Messages: ") + str(messages)
         voice = _("Voice Time: ") + str(voice)
-        name = user_name
+        name = user_display_name
         if prestige:
             name += _(" - Prestige ") + str(prestige)
         stars = str(stars)
