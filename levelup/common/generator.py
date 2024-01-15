@@ -348,7 +348,7 @@ class Generator(MixinMeta, ABC):
                 namecolor,
                 font=name_font,
                 # anchor="lt",
-                stroke_width=5,
+                stroke_width=3,
                 stroke_fill=(255,255,255),
                 emoji_scale_factor=emoji_scale,
                 emoji_position_offset=(0, name_emoji_y),
