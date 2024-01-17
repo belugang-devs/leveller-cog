@@ -507,6 +507,7 @@ class Generator(MixinMeta, ABC):
         next_xp: int = 100,
         user_position: str = "1",
         user_display_name: str = "Unknown#0117",
+        user_name: str = "Unknown",
         user_status: str = "online",
         colors: dict = None,
         messages: str = "0",
