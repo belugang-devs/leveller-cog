@@ -512,7 +512,6 @@ class Generator(MixinMeta, ABC):
         colors: dict = None,
         messages: str = "0",
         voice: str = "None",
-        emoji: str = None,
         role_icon: str = None,
         font_name: str = None,
         render_gifs: bool = False,
@@ -634,21 +633,22 @@ class Generator(MixinMeta, ABC):
         exp = f"Exp: {get_str(user_xp_progress)}/{get_str(next_xp_diff)} ({get_str(user_xp)} total)"
         messages = _("Messages: ") + str(messages)
         voice = _("Voice Time: ") + str(voice)
-        name = user_display_name
+        display_name = user_display_name
+        name = user_name
 
         base_font = self.font
         if font_name:
             fontfile = os.path.join(self.fonts, font_name)
             if os.path.exists(fontfile):
                 base_font = fontfile
-        namesize = 45
+        displaynamesize = 45
         statsize = 30
-        namefont = ImageFont.truetype(base_font, namesize)
+        displaynamefont = ImageFont.truetype(base_font, displaynamesize)
         statfont = ImageFont.truetype(base_font, statsize)
 
-        while (namefont.getlength(name) + 260) > 770:
-            namesize -= 1
-            namefont = ImageFont.truetype(base_font, namesize)
+        while (displaynamefont.getlength(display_name) + 260) > 770:
+            displaynamesize -= 1
+            displaynamefont = ImageFont.truetype(base_font, displaynamesize)
         while (statfont.getlength(messages) + 465) > 890:
             statsize -= 1
             statfont = ImageFont.truetype(base_font, statsize)
@@ -659,12 +659,23 @@ class Generator(MixinMeta, ABC):
         # Stat text
         draw.text(
             (260, 20),
-            name,
+            display_name,
             namecolor,
-            font=namefont,
+            font=displaynamefont,
             stroke_width=1,
             stroke_fill=text_bg,
         )
+
+        # Username
+        draw.text(
+            (260, 35),
+            name,
+            namecolor,
+            font=statfont,
+            stroke_width=1,
+            stroke_fill=text_bg,
+        )
+        
         draw.text(
             (260, 95),
             rank,
