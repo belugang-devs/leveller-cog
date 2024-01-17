@@ -865,7 +865,6 @@ class UserCommands(MixinMeta, ABC):
                 "messages": humanize_number(messages),
                 "voice": time_formatter(voice),
                 "emoji": emoji["url"] if emoji and isinstance(emoji, dict) else None,
-                "currency": currency_name,
                 "role_icon": role_icon,
                 "font_name": font,
                 "render_gifs": self.render_gifs,
