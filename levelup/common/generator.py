@@ -536,7 +536,7 @@ class Generator(MixinMeta, ABC):
                 lvlbarcolor = colors["levelbar"]
                 lvldistance = 10
 
-        default_fill = (0, 0, 0)
+        outlinecolor = (0, 0, 0)
         text_bg = (0, 0, 0)
 
         # Set canvas
