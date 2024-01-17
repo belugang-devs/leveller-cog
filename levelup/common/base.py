@@ -477,7 +477,7 @@ class UserCommands(MixinMeta, ABC):
         """
         Toggle your profile image type (full/slim)
 
-        Full size includes your balance, role icon and prestige icon
+        Full size includes your role icon
         Slim is a smaller slimmed down version
         """
         if not self.data[ctx.guild.id]["usepics"]:
@@ -754,7 +754,6 @@ class UserCommands(MixinMeta, ABC):
         usepics = conf["usepics"]
         users = conf["users"]
         mention = conf["mention"]
-        showbal = conf["showbal"]
         barlength = conf["barlength"]
         user_id = str(user.id)
         if user_id not in users:
@@ -765,8 +764,6 @@ class UserCommands(MixinMeta, ABC):
         if not usepics and not ctx.channel.permissions_for(ctx.me).embed_links:
             return await ctx.send(_("I do not have permission to send embeds to this channel"))
 
-        bal = await bank.get_balance(user)
-        currency_name = await bank.get_currency_name(ctx.guild)
 
         role_icon = None
         if DPY2:
@@ -788,8 +785,6 @@ class UserCommands(MixinMeta, ABC):
         xp: int = int(p["xp"])  # Float in the config but force int
         messages: int = p["messages"]  # Int
         voice: int = p["voice"]  # Int
-        prestige: int = p["prestige"]  # Int
-        stars: int = p["stars"]  # Int
         emoji: dict = p["emoji"]  # Dict
         bg = p["background"]  # Either None, random, or a filename
         font = p["font"]  # Either None or a filename
@@ -821,7 +816,6 @@ class UserCommands(MixinMeta, ABC):
 
         level_emoji = get_emoji("level")
         trophy_emoji = get_emoji("trophy")
-        star_emoji = get_emoji("star")
         chat_emoji = get_emoji("chat")
         mic_emoji = get_emoji("mic")
         bulb_emoji = get_emoji("bulb")
@@ -829,14 +823,9 @@ class UserCommands(MixinMeta, ABC):
 
         if not usepics:
             msg = f"{level_emoji}｜" + _("Level ") + humanize_number(level) + "\n"
-            if prestige:
-                msg += f"{trophy_emoji}｜" + _("Prestige ") + humanize_number(prestige) + f" {emoji['str']}\n"
-            msg += f"{star_emoji}｜{humanize_number(stars)}" + _(" stars\n")
             msg += f"{chat_emoji}｜{humanize_number(messages)}" + _(" messages sent\n")
             msg += f"{mic_emoji}｜{time_formatter(voice)}" + _(" in voice\n")
             msg += f"{bulb_emoji}｜{humanize_number(user_xp_progress)}/{humanize_number(next_xp_diff)} Exp ({humanize_number(xp)} total)\n"
-            if showbal:
-                msg += f"{money_emoji}｜{humanize_number(bal)} {currency_name}"
             em = discord.Embed(description=msg, color=user.color)
             footer = _("Rank ") + position + _(", with ") + str(percentage) + _("% of global server Exp")
             author_name = _("{}'s Profile").format(user.display_name)
@@ -875,10 +864,7 @@ class UserCommands(MixinMeta, ABC):
                 "colors": usercolors,  # User's color
                 "messages": humanize_number(messages),
                 "voice": time_formatter(voice),
-                "prestige": prestige,
                 "emoji": emoji["url"] if emoji and isinstance(emoji, dict) else None,
-                "stars": stars,
-                "balance": bal if showbal else 0,
                 "currency": currency_name,
                 "role_icon": role_icon,
                 "font_name": font,
@@ -908,107 +894,6 @@ class UserCommands(MixinMeta, ABC):
             if ctx.author.id == 350053505815281665:
                 log.info(f"Render time: {humanize_number(rtime)}ms\n" f"Send Time: {humanize_number(mtime)}ms")
 
-    @commands.command(name="prestige")
-    @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True)
-    async def prestige_user(self, ctx: commands.Context):
-        """
-        Prestige your rank!
-        Once you have reached this servers prestige level requirement, you can
-        reset your level and experience to gain a prestige level and any perks associated with it
-
-        If you are over level and xp when you prestige, your xp and levels will carry over
-        """
-        conf = self.data[ctx.guild.id]
-        perms = ctx.channel.permissions_for(ctx.guild.me).manage_roles
-        if not perms:
-            log.warning("Insufficient perms to assign prestige ranks!")
-
-        required_level = conf["prestige"]
-        if not required_level:
-            return await ctx.send(_("Prestige is disabled on this server!"))
-        prestige_data = conf["prestigedata"]
-        if not prestige_data:
-            return await ctx.send(_("Prestige levels have not been set yet!"))
-        user_id = str(ctx.author.id)
-        users = conf["users"]
-        if user_id not in users:
-            return await ctx.send(_("No information available for you yet!"))
-        user = users[user_id]
-        current_level = user["level"]
-        prestige = int(user["prestige"])
-        pending_prestige = str(prestige + 1)
-        # First add new prestige role
-        if current_level < required_level:
-            msg = _("**You are not eligible to prestige yet!**\n")
-            msg += _("`Your level:     `") + f"{current_level}\n"
-            msg += _("`Required Level: `") + f"{required_level}"
-            embed = discord.Embed(description=msg, color=discord.Color.red())
-            return await ctx.send(embed=embed)
-
-        if pending_prestige not in prestige_data:
-            return await ctx.send(_("Prestige level ") + str(pending_prestige) + _(" has not been set yet!"))
-
-        role_id = prestige_data[pending_prestige]["role"]
-        prestige_role = ctx.guild.get_role(role_id) if role_id else None
-        emoji = prestige_data[pending_prestige]["emoji"]
-        if perms and prestige_role:
-            try:
-                await ctx.author.add_roles(prestige_role)
-            except discord.Forbidden:
-                await ctx.send(
-                    _("I do not have the proper permissions to assign you to the {} role!").format(
-                        prestige_role.mention
-                    )
-                )
-
-        current_xp = user["xp"]
-        xp_at_prestige = get_xp(required_level)
-        leftover_xp = current_xp - xp_at_prestige if current_xp > xp_at_prestige else 0
-        newlevel = get_level(leftover_xp, conf["base"], conf["exp"]) if leftover_xp > 0 else 1
-
-        self.data[ctx.guild.id]["users"][user_id]["prestige"] = int(pending_prestige)
-        self.data[ctx.guild.id]["users"][user_id]["emoji"] = emoji
-        self.data[ctx.guild.id]["users"][user_id]["level"] = newlevel
-        self.data[ctx.guild.id]["users"][user_id]["xp"] = leftover_xp
-        embed = discord.Embed(
-            description=_("You have reached Prestige ") + f"{pending_prestige}!",
-            color=ctx.author.color,
-        )
-        await ctx.send(embed=embed)
-
-        # Then remove old prestige role if autoremove is toggled
-        if prestige > 0 and not conf["stackprestigeroles"]:
-            if str(prestige) in prestige_data:
-                role_id = prestige_data[str(prestige)]["role"]
-                role = ctx.guild.get_role(role_id)
-                if role and perms:
-                    await ctx.author.remove_roles(role)
-
-        # Handle roles
-        level_roles = conf["levelroles"]
-
-        # Remove all level roles from user
-        role_ids_to_remove = [int(role_id) for level, role_id in level_roles.items() if int(level) > newlevel]
-        to_remove = [role for role in ctx.author.roles if role.id in role_ids_to_remove]
-        try:
-            await ctx.author.remove_roles(*to_remove)
-        except discord.Forbidden:
-            await ctx.send(_("I don't have permissions to remove your old roles!"))
-
-        # If autoremove is on then the new highest role might need to be reassigned
-        highest_level = 0
-        for level, role_id in level_roles.items():
-            if newlevel >= int(level) >= highest_level:
-                highest_level = int(level)
-
-        if highest_level:
-            role_id = level_roles[str(highest_level)]
-            role = ctx.guild.get_role(role_id)
-            try:
-                await ctx.author.add_roles(role)
-            except discord.Forbidden:
-                await ctx.send(_("I was not able to re-add the {} role to your profile!").format(role.mention))
 
     @commands.command(name="lvltop", aliases=["topstats", "membertop", "topranks"])
     @commands.guild_only()

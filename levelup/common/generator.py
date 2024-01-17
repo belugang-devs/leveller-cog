@@ -31,7 +31,6 @@ class Generator(MixinMeta, ABC):
         super().__init__(*args, **kwargs)
         # Included Assets
         maindir = bundled_data_path(self)
-        self.star = maindir / "star.png"
         self.default_pfp = maindir / "defaultpfp.png"
         self.status = {
             "online": maindir / "online.png",
@@ -77,11 +76,6 @@ class Generator(MixinMeta, ABC):
         colors: dict = None,
         messages: str = "0",
         voice: str = "None",
-        prestige: int = 0,
-        emoji: str = None,
-        stars: str = "0",
-        balance: int = 0,
-        currency: str = "credits",
         role_icon: str = None,
         font_name: str = None,
         render_gifs: bool = False,
@@ -253,9 +247,6 @@ class Generator(MixinMeta, ABC):
         )
         message_count = _("Messages: ") + messages
         voice = _("Voice: ") + voice
-        stars = str(stars)
-        bal = _("Balance: ") + f"{humanize_number(balance)} {currency}"
-        prestige_str = _("Prestige ") + str(prestige)
 
         # Get base font
         base_font = self.font
@@ -318,21 +309,6 @@ class Generator(MixinMeta, ABC):
                 (50, 50), Image.Resampling.NEAREST
             )
             blank.paste(role_icon_img, (10, 10))
-        # Prestige icon
-        prestige_bytes = self.get_image_content_from_url(emoji) if prestige else None
-        if prestige_bytes:
-            prestige_bytes = BytesIO(prestige_bytes)
-            prestige_img = Image.open(prestige_bytes).resize(
-                (stats_size, stats_size), Image.Resampling.NEAREST
-            )
-            # Adjust prestige icon placement
-            p_bbox = stats_font.getbbox(prestige_str)
-            # Middle of stat text
-            pmiddle = stats_y - stats_size - 10 + int(p_bbox[3] / 2)
-            # Paste prestige image appropriately
-            pr_x = p_bbox[2] + bar_start + 20
-            pr_y = pmiddle - int(stats_size / 2)
-            blank.paste(prestige_img, (pr_x, pr_y))
 
         # New final
         final = Image.alpha_composite(final, blank)
@@ -368,32 +344,9 @@ class Generator(MixinMeta, ABC):
                 emoji_scale_factor=emoji_scale,
                 emoji_position_offset=(0, username_emoji_y),
             )
-            # Balance
-            if balance:
-                bal_bbox = stats_font.getbbox(bal)
-                bal_emoji_y = bal_bbox[3] - int(stats_size * emoji_scale)
-                pilmoji.text(
-                    (bar_start + 10, bar_top - 110),
-                    bal,
-                    statcolor,
-                    font=stats_font,
-                    stroke_width=stroke_width,
-                    stroke_fill=statstxtfill,
-                    emoji_scale_factor=emoji_scale,
-                    emoji_position_offset=(0, bal_emoji_y),
-                )
 
         draw = ImageDraw.Draw(final)
-        # Prestige
-        if prestige:
-            draw.text(
-                (bar_start + 10, stats_y - stats_size - 10),
-                prestige_str,
-                statcolor,
-                font=stats_font,
-                stroke_width=stroke_width,
-                stroke_fill=statstxtfill,
-            )
+ 
         # Stats text
         # Rank
         draw.text(
@@ -557,11 +510,6 @@ class Generator(MixinMeta, ABC):
         colors: dict = None,
         messages: str = "0",
         voice: str = "None",
-        prestige: int = 0,
-        emoji: str = None,
-        stars: str = "0",
-        balance: int = 0,
-        currency: str = "credits",
         role_icon: str = None,
         font_name: str = None,
         render_gifs: bool = False,
@@ -684,9 +632,6 @@ class Generator(MixinMeta, ABC):
         messages = _("Messages: ") + str(messages)
         voice = _("Voice Time: ") + str(voice)
         name = user_display_name
-        if prestige:
-            name += _(" - Prestige ") + str(prestige)
-        stars = str(stars)
 
         base_font = self.font
         if font_name:
@@ -695,10 +640,8 @@ class Generator(MixinMeta, ABC):
                 base_font = fontfile
         namesize = 45
         statsize = 30
-        starsize = 45
         namefont = ImageFont.truetype(base_font, namesize)
         statfont = ImageFont.truetype(base_font, statsize)
-        starfont = ImageFont.truetype(base_font, starsize)
 
         while (namefont.getlength(name) + 260) > 770:
             namesize -= 1
@@ -709,9 +652,6 @@ class Generator(MixinMeta, ABC):
         while (statfont.getlength(level) + 260) > 455:
             statsize -= 1
             statfont = ImageFont.truetype(base_font, statsize)
-        while (starfont.getlength(stars) + 825) > 890:
-            starsize -= 1
-            starfont = ImageFont.truetype(base_font, starsize)
 
         # Stat text
         draw.text(
@@ -759,14 +699,6 @@ class Generator(MixinMeta, ABC):
             voice,
             statcolor,
             font=statfont,
-            stroke_width=1,
-            stroke_fill=text_bg,
-        )
-        draw.text(
-            (825, 28),
-            stars,
-            statcolor,
-            font=starfont,
             stroke_width=1,
             stroke_fill=text_bg,
         )
@@ -839,15 +771,11 @@ class Generator(MixinMeta, ABC):
         )
         status_img = Image.open(status)
         status = status_img.convert("RGBA").resize((40, 40), Image.Resampling.NEAREST)
-        rep_icon = Image.open(self.star)
-        rep_icon = rep_icon.convert("RGBA").resize((40, 40), Image.Resampling.NEAREST)
 
         # Status badge
         # Another blank
         blank = Image.new("RGBA", pre.size, (255, 255, 255, 0))
         blank.paste(status, (169, 169))
-        # Add rep star
-        blank.paste(rep_icon, (780, 29))
 
         final = Image.alpha_composite(pre, blank)
         return final

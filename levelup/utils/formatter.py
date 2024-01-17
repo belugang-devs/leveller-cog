@@ -172,11 +172,6 @@ def get_leaderboard(
 
         if "xp" in stat.lower():
             lb = {uid: data.copy() for uid, data in settings["users"].items()}
-            if prestige_req := settings.get("prestige"):
-                # If this isnt pulled its global lb
-                for uid, data in lb.items():
-                    if prestige := data["prestige"]:
-                        data["xp"] += prestige * get_xp(prestige_req)
 
     if "v" in stat.lower():
         sorted_users = sorted(lb.items(), key=lambda x: x[1]["voice"], reverse=True)
@@ -192,13 +187,6 @@ def get_leaderboard(
         col = "💬"
         statname = _("Messages")
         total = humanize_number(round(sum(v["messages"] for v in lb.values())))
-    elif "s" in stat.lower():
-        sorted_users = sorted(lb.items(), key=lambda x: x[1]["stars"], reverse=True)
-        title += _("Star Leaderboard")
-        key = "stars"
-        col = "⭐"
-        statname = _("Stars")
-        total = humanize_number(round(sum(v["stars"] for v in lb.values())))
     else:  # Exp
         sorted_users = sorted(lb.items(), key=lambda x: x[1]["xp"], reverse=True)
         title += _("Exp Leaderboard")
@@ -316,16 +304,11 @@ async def get_content_from_url(url: str):
 async def get_user_position(conf: dict, user_id: str) -> dict:
     base = conf["base"]
     exp = conf["exp"]
-    prestige_req = conf["prestige"]
     leaderboard = {}
     total_xp = 0
     user_xp = 0
     for user, data in conf["users"].items():
         xp = int(data["xp"])
-        prestige = int(data["prestige"])
-        if prestige:
-            add_xp = get_xp(prestige_req)
-            xp = int(xp + (prestige * add_xp))
         leaderboard[user] = xp
         total_xp += xp
         if user == user_id:

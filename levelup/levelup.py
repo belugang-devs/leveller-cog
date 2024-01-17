@@ -127,7 +127,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         # Guild IDs as strings, user IDs as strings
         self.lastmsg = {}  # Last sent message for users
         self.voice = {}  # Voice channel info
-        self.stars = {}  # Keep track of star cooldowns
         self.first_run = True
         self.profiles = {}
 
@@ -215,61 +214,15 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         # Ignore people adding reactions to their own messages
         if msg.author.id == payload.user_id:
             return
-        now = datetime.now()
         gid = payload.guild_id
-        giver_id = str(payload.user_id)
-        giver = payload.member
-        receiver = msg.author
 
         if guild.id not in self.data:
             await self.initialize()
 
-        can_give = False
-        if giver_id not in self.stars[gid]:
-            self.stars[gid][giver_id] = now
-            can_give = True
-
-        if not can_give:
-            cooldown = self.data[gid]["starcooldown"]
-            last_given = self.stars[gid][giver_id]
-            td = (now - last_given).total_seconds()
-            if td > cooldown:
-                self.stars[gid][giver_id] = now
-                can_give = True
-
-        if not can_give:
-            return
-
-        uid = str(receiver.id)
-        if uid not in self.data[gid]["users"]:
-            return
-
-        self.data[gid]["users"][uid]["stars"] += 1
-        if self.data[gid]["weekly"]["on"]:
-            weekly_users = self.data[gid]["weekly"]["users"]
-            if uid not in weekly_users:
-                self.init_user_weekly(gid, uid)
-            self.data[gid]["weekly"]["users"][uid]["stars"] += 1
-
-        if not self.data[gid]["starmention"]:
-            return
-        del_after = self.data[gid]["starmentionautodelete"]
-        star_giver = f"**{giver.name}** "
-        star_reciever = f" **{receiver.name}**!"
         if not chan.permissions_for(guild.me).send_messages:
             return
         if chan.id in self.data[gid]["ignoredchannels"]:
             return
-        if giver.id in self.data[gid]["ignoredusers"]:
-            return
-        with contextlib.suppress(discord.HTTPException):
-            if del_after:
-                await chan.send(
-                    star_giver + _("just gave a star to") + star_reciever,
-                    delete_after=del_after,
-                )
-            else:
-                await chan.send(star_giver + _("just gave a star to") + star_reciever)
 
     @commands.Cog.listener("on_message")
     async def messages(self, message: discord.Message):
@@ -322,7 +275,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
                         allclean.append(i)
                 log.info(f"Cleaned up {guild.name} config")
             self.data[gid] = data
-            self.stars[gid] = {}
             self.voice[gid] = {}
             self.lastmsg[gid] = {}
         if allclean and self.first_run:
@@ -340,20 +292,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         if isinstance(conf["channelbonuses"]["voice"], list):
             conf["channelbonuses"]["voice"] = {}
         cleaned = []
-        # Check prestige data
-        if conf["prestigedata"]:
-            for prestige_level, prestige_data in conf["prestigedata"].items():
-                # Make sure emoji data is a dict
-                if isinstance(prestige_data["emoji"], dict):
-                    continue
-                # Fix old string emoji data
-                conf["prestigedata"][prestige_level]["emoji"] = {
-                    "str": prestige_data["emoji"],
-                    "url": None,
-                }
-                t = "prestige data fix"
-                if t not in cleaned:
-                    cleaned.append(t)
 
         # Check players
         for uid, user in conf["users"].items():
@@ -364,9 +302,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
             if "background" not in user:
                 conf["users"][uid]["background"] = None
                 cleaned.append("background not in playerstats")
-            if "stars" not in user:
-                conf["users"][uid]["stars"] = 0
-                cleaned.append("stars not in playerstats")
             if "colors" not in user:
                 conf["users"][uid]["colors"] = {
                     "name": None,
@@ -394,25 +329,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
                 conf["users"][uid][k] = int(v.replace(",", "")) if v is not None else 0
                 cleaned.append(f"{k} stat should be int")
 
-            # Check prestige settings
-            if not user["prestige"]:
-                continue
-            if user["emoji"] is None:
-                continue
-            # Fix profiles with the old prestige emoji string
-            if isinstance(user["emoji"], str):
-                conf["users"][uid]["emoji"] = {
-                    "str": user["emoji"],
-                    "url": None,
-                }
-                cleaned.append("old emoji schema in profile")
-            prest_key = str(user["prestige"])
-            if prest_key not in data["prestigedata"]:
-                continue
-            # See if there are updated prestige settings to get the new url from
-            if conf["users"][uid]["emoji"]["url"] != data["prestigedata"][prest_key]["emoji"]["url"]:
-                conf["users"][uid]["emoji"]["url"] = data["prestigedata"][prest_key]["emoji"]["url"]
-                cleaned.append("updated profile emoji url")
         return cleaned, data
 
     @perf(max_entries=1000)
@@ -444,9 +360,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
             "voice": 0,  # Seconds
             "messages": 0,
             "level": 0,
-            "prestige": 0,
             "emoji": None,
-            "stars": 0,
             "background": "random",
             "full": True,
             "colors": {"name": (255,255,255), "stat": (255,255,255), "levelbar": level_colour},
@@ -461,16 +375,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
             "xp": 0,
             "voice": 0,  # Seconds,
             "messages": 0,
-            "stars": 0,
         }
-
-    def give_star_to_user(self, guild: discord.Guild, user: discord.Member) -> bool:
-        if guild.id not in self.data:
-            return False
-        if str(user.id) not in self.data[guild.id]["users"]:
-            return False
-        self.data[guild.id]["users"][str(user.id)]["stars"] += 1
-        return True
 
     async def check_levelups(
         self,
@@ -945,12 +850,10 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         total_xp = humanize_number(round(sum(v["xp"] for v in users.values())))
         total_messages = humanize_number(sum(v["messages"] for v in users.values()))
         total_voicetime = time_formatter(sum(v["voice"] for v in users.values()))
-        total_stars = humanize_number(sum(v["stars"] for v in users.values()))
 
         title = _("Top Weekly Exp Earners")
         desc = _("`Total Exp:      `") + total_xp + "\n"
         desc += _("`Total Messages: `") + total_messages + "\n"
-        desc += _("`Total Stars:    `") + total_stars + "\n"
         desc += _("`Total Voice:    `") + total_voicetime
         em = discord.Embed(title=title, description=desc, color=discord.Color.green())
 
@@ -972,12 +875,10 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
 
             xp = humanize_number(round(d["xp"]))
             msg = humanize_number(d["messages"])
-            stars = humanize_number(d["stars"])
             voice = time_formatter(d["voice"])
 
             value = _("`Exp:      `") + xp + "\n"
             value += _("`Messages: `") + msg + "\n"
-            value += _("`Stars:    `") + stars + "\n"
             value += _("`Voice:    `") + voice
             em.add_field(name=f"#{place}. {user.name}", value=value, inline=False)
             top_uids.append(str(user.id))
@@ -1039,9 +940,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         igchannels = conf["ignoredchannels"]
         igroles = conf["ignoredroles"]
         igusers = conf["ignoredusers"]
-        prestige = conf["prestige"]
-        pdata = conf["prestigedata"]
-        stacking = conf["stackprestigeroles"]
         xp = conf["xp"]
         xpbonus = conf["rolebonuses"]["msg"]
         xpchanbonus = conf["channelbonuses"]["msg"]
@@ -1061,12 +959,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         notifydm = conf["notifydm"]
         lvlmessage = conf["notify"]
         mention = conf["mention"]
-        starcooldown = conf["starcooldown"]
-        starmention = conf["starmention"]
-        stardelete = conf["starmentionautodelete"] if conf["starmentionautodelete"] else "Disabled"
-        showbal = conf["showbal"]
         barlength = conf["barlength"]
-        sc = time_formatter(starcooldown)
         notifylog = ctx.guild.get_channel(conf["notifylog"])
         if not notifylog:
             notifylog = conf["notifylog"]
@@ -1076,7 +969,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
 
         msg = _("**Main**\n")
         msg += _("`Profile Type:      `") + f"{ptype}\n"
-        msg += _("`Include Balance:   `") + f"{showbal}\n"
         msg += _("`Progress Bar:      `") + f"{barlength} chars long\n"
         msg += _("**Messages**\n")
         msg += _("`Message XP:        `") + f"{xp[0]}-{xp[1]}\n"
@@ -1097,10 +989,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         msg += _("`Mention User:      `") + f"{mention}\n"
         msg += _("`AutoRemove Roles:  `") + f"{autoremove}\n"
         msg += _("`LevelUp Channel:   `") + f"{notifylog}\n"
-        msg += _("**Stars**\n")
-        msg += _("`Cooldown:          `") + f"{sc}\n"
-        msg += _("`React Mention:     `") + f"{starmention}\n"
-        msg += _("`MentionAutoDelete: `") + f"{stardelete}\n"
         if levelroles:
             msg += _("**Levels**\n")
             for level, role_id in levelroles.items():
@@ -1110,18 +998,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
                 else:
                     role = role_id
                 msg += _("`Level ") + f"{level}: `{role}\n"
-        if prestige and pdata:
-            msg += _("**Prestige**\n`Stack Roles: `") + f"{stacking}\n"
-            msg += _("`Level Req:  `") + f"{prestige}\n"
-            for level, data in pdata.items():
-                role_id = data["role"]
-                role = ctx.guild.get_role(role_id)
-                if role:
-                    role = role.mention
-                else:
-                    role = role_id
-                emoji = data["emoji"]
-                msg += _("`Prestige ") + f"{level}: `{role} - {emoji['str']}\n"
         embed = discord.Embed(
             title=_("LevelUp Settings"),
             description=msg,
@@ -1190,8 +1066,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         self,
         ctx: commands.Context,
         level: discord.Emoji | discord.PartialEmoji | str,
-        prestige: discord.Emoji | discord.PartialEmoji | str,
-        star: discord.Emoji | discord.PartialEmoji | str,
         chat: discord.Emoji | discord.PartialEmoji | str,
         voicetime: discord.Emoji | discord.PartialEmoji | str,
         experience: discord.Emoji | discord.PartialEmoji | str,
@@ -1210,13 +1084,11 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
                 await ctx.send(f"Cannot add reactions: {e}")
                 return False
 
-        reactions = [level, prestige, star, chat, voicetime, experience, balance]
+        reactions = [level, chat, voicetime, experience, balance]
         if not await test_reactions(ctx, reactions):
             return
         conf = self.data[ctx.guild.id]
         conf["emojis"]["level"] = level if isinstance(level, str) else level.id
-        conf["emojis"]["trophy"] = prestige if isinstance(prestige, str) else prestige.id
-        conf["emojis"]["star"] = star if isinstance(star, str) else star.id
         conf["emojis"]["chat"] = chat if isinstance(chat, str) else chat.id
         conf["emojis"]["mic"] = voicetime if isinstance(voicetime, str) else voicetime.id
         conf["emojis"]["bulb"] = experience if isinstance(experience, str) else experience.id
@@ -1236,7 +1108,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
             "xp": 0,
             "voice": 0,
             "messages": 0,
-            "stars": 0,
         }
         await ctx.send(_("Reset weekly stats for ") + user.name)
         await self.save_cache(ctx.guild)
@@ -1319,7 +1190,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         users = self.data[ctx.guild.id]["users"].copy()
         count = len(users.keys())
         text = _("Are you sure you want to reset ") + str(count) + _(" users' stats?") + " (y/n)"
-        text += _("\nThis will reset their exp, voice time, messages, level, prestige and stars")
+        text += _("\nThis will reset their exp, voice time, messages, level")
         msg = await ctx.send(text)
         async with ctx.typing():
             deleted = 0
@@ -1328,8 +1199,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
                 self.data[ctx.guild.id]["users"][uid]["voice"] = 0
                 self.data[ctx.guild.id]["users"][uid]["messages"] = 0
                 self.data[ctx.guild.id]["users"][uid]["level"] = 0
-                self.data[ctx.guild.id]["users"][uid]["prestige"] = 0
-                self.data[ctx.guild.id]["users"][uid]["stars"] = 0
                 deleted += 1
             text = _("Reset stats for ") + str(deleted) + _(" users")
             await msg.edit(content=text)
@@ -1342,7 +1211,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         cache = [
             self.data.copy(),
             self.voice.copy(),
-            self.stars.copy(),
             self.profiles.copy(),
         ]
         cachesize = self.get_size(sum(sys.getsizeof(i) for i in cache))
@@ -2008,7 +1876,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         """
         Import data from Fixator's Leveler cog
 
-        This will overwrite existing LevelUp level data and stars
+        This will overwrite existing LevelUp level data
         It will also import XP range level roles, and ignored channels
         *Obviously you will need MongoDB running while you run this command*
         """
@@ -2120,9 +1988,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
                         self.data[guild.id]["users"][user_id]["level"] = int(level)
                         self.data[guild.id]["users"][user_id]["xp"] = xp
 
-                    # Import rep
-                    self.data[guild.id]["users"][user_id]["stars"] = int(userinfo["rep"]) if userinfo["rep"] else 0
-                    users_imported += 1
 
             embed = discord.Embed(
                 description=_("Importing Complete!\n") + f"{users_imported}" + _(" users imported"),
@@ -2478,29 +2343,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         txt = _("User ") + user.name + _(" is now level ") + str(level)
         await ctx.send(txt)
 
-    @lvl_group.command(name="setprestige")
-    async def set_user_prestige(self, ctx: commands.Context, user: discord.Member, prestige: int):
-        """
-        Set a user to a specific prestige level
-
-        Prestige roles will need to be manually added/removed when using this command
-        """
-        conf = self.data[ctx.guild.id]
-        uid = str(user.id)
-        if uid not in conf["users"]:
-            return await ctx.send(_("There is no data for that user!"))
-        prestige_data = conf["prestigedata"]
-        if not prestige_data:
-            return await ctx.send(_("Prestige levels have not been set yet!"))
-        p = str(prestige)
-        if p not in prestige_data:
-            return await ctx.send(_("That prestige level isn't set!"))
-        emoji = prestige_data[p]["emoji"]
-        self.data[ctx.guild.id]["users"][uid]["prestige"] = int(prestige)
-        self.data[ctx.guild.id]["users"][uid]["emoji"] = emoji
-        await ctx.tick()
-        await self.save_cache(ctx.guild)
-
     @lvl_group.group(name="algorithm")
     async def algo_edit(self, ctx: commands.Context):
         """Customize the leveling algorithm for your guild"""
@@ -2662,33 +2504,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
             await ctx.send(_("Mentions **Enabled**"))
         await self.save_cache(ctx.guild)
 
-    @lvl_group.command(name="starmention")
-    async def toggle_starmention(self, ctx: commands.Context):
-        """
-        Toggle star reaction mentions
-        Toggle whether the bot mentions that a user reacted to a message with a star
-        """
-        mention = self.data[ctx.guild.id]["starmention"]
-        if mention:
-            self.data[ctx.guild.id]["starmention"] = False
-            await ctx.send(_("Star reaction mentions **Disabled**"))
-        else:
-            self.data[ctx.guild.id]["starmention"] = True
-            await ctx.send(_("Star reaction mention **Enabled**"))
-        await self.save_cache(ctx.guild)
-
-    @lvl_group.command(name="starmentiondelete")
-    async def toggle_starmention_autodelete(self, ctx: commands.Context, deleted_after: int):
-        """
-        Toggle whether the bot auto-deletes the star mentions
-        Set to 0 to disable auto-delete
-        """
-        self.data[ctx.guild.id]["starmentionautodelete"] = int(deleted_after)
-        if deleted_after:
-            await ctx.send(_("Star reaction mentions will auto-delete after ") + str(deleted_after) + _(" seconds"))
-        else:
-            await ctx.send(_("Star reaction mentions will not be deleted"))
-        await self.save_cache(ctx.guild)
 
     @lvl_group.command(name="levelchannel")
     async def set_level_channel(
@@ -2716,18 +2531,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
             await ctx.send(_("LevelUp channel has been set to ") + levelup_channel.mention)
         await self.save_cache(ctx.guild)
 
-    @lvl_group.command(name="showbalance")
-    async def toggle_profile_balance(self, ctx: commands.Context):
-        """Toggle whether to show user's economy credit balance in their profile"""
-        showbal = self.data[ctx.guild.id]["showbal"]
-        if showbal:
-            self.data[ctx.guild.id]["showbal"] = False
-            await ctx.send(_("I will no longer include economy balance in user profiles"))
-        else:
-            self.data[ctx.guild.id]["showbal"] = True
-            await ctx.send(_("I will now include economy balance in user profiles"))
-        await self.save_cache(ctx.guild)
-
     @lvl_group.command(name="levelnotify")
     async def toggle_levelup_notifications(self, ctx: commands.Context):
         """Toggle the level up message when a user levels up"""
@@ -2740,16 +2543,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
             await ctx.send("LevelUp notifications have been **Enabled**")
         await self.save_cache(ctx.guild)
 
-    @lvl_group.command(name="starcooldown")
-    async def set_star_cooldown(self, ctx: commands.Context, time_in_seconds: int):
-        """
-        Set the star cooldown
-
-        Users can give another user a star every X seconds
-        """
-        self.data[ctx.guild.id]["starcooldown"] = time_in_seconds
-        await ctx.tick()
-        await self.save_cache(ctx.guild)
 
     @lvl_group.group(name="roles")
     @commands.admin_or_permissions(manage_roles=True)
@@ -2763,7 +2556,7 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         Initialize level roles
 
         This command is for if you added level roles after users have achieved that level,
-        it will apply all necessary roles to a user according to their level and prestige
+        it will apply all necessary roles to a user according to their level
         """
         start = perf_counter()
         guild = ctx.guild
@@ -2784,7 +2577,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
 
         conf = self.data[ctx.guild.id]
         level_roles = conf["levelroles"]
-        prestiges = conf["prestigedata"]
         autoremove = conf["autoremove"]
         users = [i for i in conf["users"]]
         for user_id in users:
@@ -2796,7 +2588,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
 
             data = conf["users"][user_id]
             user_level = data["level"]
-            prestige_level = data["prestige"]
             if autoremove:
                 highest_level = 0
                 for level, role_id in level_roles.items():
@@ -2811,30 +2602,12 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
                             if user_role.id in level_roles.values() and user_role.id != role.id:
                                 to_remove[user].add(user_role)
 
-                highest_prestige = 0
-                for prestige_level_requirement in prestiges:
-                    if int(prestige_level) >= int(prestige_level_requirement) >= highest_prestige:
-                        highest_prestige = int(prestige_level_requirement)
-
-                if highest_prestige:
-                    prestige_role_ids = [i["role"] for i in prestiges.values()]
-                    role_id = prestiges[str(highest_prestige)]
-                    if role := guild.get_role(role_id):
-                        to_add[user].add(role)
-                        for user_role in user.roles:
-                            if user_role.id in prestige_role_ids and user_role.id != role.id:
-                                to_remove[user].add(user_role)
 
             else:
                 user_role_ids = [role.id for role in user.roles]
                 for lvl, role_id in level_roles.items():
                     if role := guild.get_role(int(role_id)):
                         if int(lvl) <= int(user_level) and role.id not in user_role_ids:
-                            to_add[user].add(role)
-
-                for lvl, prestige in prestiges.items():
-                    if role := guild.get_role(int(prestige["role"])):
-                        if int(lvl) <= int(prestige_level) and role.id not in user_role_ids:
                             to_add[user].add(role)
 
         embed.description = _("Assigning roles, this may take a while...")
@@ -2939,57 +2712,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         else:
             await ctx.send(_("Level doesnt exist!"))
 
-    @lvl_group.group(name="prestige")
-    async def prestige_settings(self, ctx: commands.Context):
-        """Level Prestige Settings"""
-        pass
-
-    @prestige_settings.command(name="level")
-    async def prestige_level(self, ctx: commands.Context, level: int):
-        """
-        Set the level required to prestige
-        Set to 0 to disable prestige
-        """
-        self.data[ctx.guild.id]["prestige"] = level
-        await ctx.tick()
-        await self.save_cache(ctx.guild)
-
-    @prestige_settings.command(name="autoremove")
-    async def toggle_prestige_autoremove(self, ctx: commands.Context):
-        """Automatic removal of previous prestige level roles"""
-        autoremove = self.data[ctx.guild.id]["stackprestigeroles"]
-        if autoremove:
-            self.data[ctx.guild.id]["stackprestigeroles"] = False
-            await ctx.send(_("Automatic prestige role removal **Disabled**"))
-        else:
-            self.data[ctx.guild.id]["stackprestigeroles"] = True
-            await ctx.send(_("Automatic prestige role removal **Enabled**"))
-        await self.save_cache(ctx.guild)
-
-    @prestige_settings.command(name="add")
-    async def add_pres_data(
-        self,
-        ctx: commands.Context,
-        prestige_level: str,
-        role: discord.Role,
-        emoji: Union[discord.Emoji, discord.PartialEmoji, str],
-    ):
-        """
-        Add a prestige level role
-        Add a role and emoji associated with a specific prestige level
-
-        When a user prestiges, they will get that role and the emoji will show on their profile
-        """
-        if not prestige_level.isdigit():
-            return await ctx.send(_("prestige_level must be a number!"))
-        url = get_twemoji(emoji) if isinstance(emoji, str) else emoji.url
-        self.data[ctx.guild.id]["prestigedata"][prestige_level] = {
-            "role": role.id,
-            "emoji": {"str": str(emoji), "url": url},
-        }
-        await ctx.tick()
-        await self.save_cache(ctx.guild)
-
     @commands.command(name="etest", hidden=True)
     async def e_test(self, ctx, emoji: Union[discord.Emoji, discord.PartialEmoji, str]):
         """Test emojis to see if the bot is able to get a valid url for them"""
@@ -2999,18 +2721,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
         else:
             await ctx.send(emoji.url)
 
-    @prestige_settings.command(name="del")
-    async def del_pres_data(self, ctx: commands.Context, prestige_level: str):
-        """Delete a prestige level role"""
-        if not prestige_level.isdigit():
-            return await ctx.send(_("prestige_level must be a number!"))
-        pd = self.data[ctx.guild.id]["prestigedata"]
-        if prestige_level in pd:
-            del self.data[ctx.guild.id]["prestigedata"][prestige_level]
-        else:
-            return await ctx.send(_("That prestige level doesnt exist!"))
-        await ctx.tick()
-        await self.save_cache(ctx.guild)
 
     @lvl_group.group(name="ignored")
     async def ignore_group(self, ctx: commands.Context):
@@ -3354,8 +3064,6 @@ class LevelUp(UserCommands, Generator, commands.Cog, metaclass=CompositeMetaClas
             f"Voice time: {humanize_timedelta(seconds=int(user_data['voice']))}\n"
             f"Message count: {humanize_number(user_data['messages'])}\n"
             f"Level: {user_data['level']}\n"
-            f"Prestige: {user_data['prestige']}\n"
             f"Emoji: {user_data['emoji']}\n"
-            f"Stars: {humanize_number(user_data['stars'])}"
         )
         return txt
