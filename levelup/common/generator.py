@@ -643,7 +643,7 @@ class Generator(MixinMeta, ABC):
             if os.path.exists(fontfile):
                 base_font = fontfile
         displaynamesize = 35
-        statsize = 30
+        statsize = 25
         displaynamefont = ImageFont.truetype(base_font, displaynamesize)
         statfont = ImageFont.truetype(base_font, statsize)
 
@@ -669,7 +669,7 @@ class Generator(MixinMeta, ABC):
 
         # Username
         draw.text(
-            (260, 50),
+            (260, 55),
             name,
             namecolor,
             font=statfont,
