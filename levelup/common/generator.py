@@ -513,6 +513,7 @@ class Generator(MixinMeta, ABC):
         messages: str = "0",
         voice: str = "None",
         role_icon: str = None,
+        emoji: str = None,
         font_name: str = None,
         render_gifs: bool = False,
         blur: bool = True,
@@ -641,7 +642,7 @@ class Generator(MixinMeta, ABC):
             fontfile = os.path.join(self.fonts, font_name)
             if os.path.exists(fontfile):
                 base_font = fontfile
-        displaynamesize = 45
+        displaynamesize = 35
         statsize = 30
         displaynamefont = ImageFont.truetype(base_font, displaynamesize)
         statfont = ImageFont.truetype(base_font, statsize)
@@ -668,7 +669,7 @@ class Generator(MixinMeta, ABC):
 
         # Username
         draw.text(
-            (260, 35),
+            (260, 50),
             name,
             namecolor,
             font=statfont,
