@@ -203,7 +203,7 @@ class Generator(MixinMeta, ABC):
 
         # Make the semi-transparent box area blurry
         if blur:
-            blurred = card.filter(ImageFilter.GaussianBlur(3))
+            blurred = card.filter(ImageFilter.GaussianBlur(6))
             blurred = blurred.crop(((bar_start - 20), 0, card.size[0], card.size[1]))
             card.paste(blurred, (bar_start - 20, 0), blurred)
         final = Image.alpha_composite(card, blank)
@@ -397,7 +397,7 @@ class Generator(MixinMeta, ABC):
         # Stats text
         # Rank
         draw.text(
-            (bar_start + 10, stats_y),
+            (bar_start + 10, stats_y + 10),
             rank,
             statcolor,
             font=stats_font,
@@ -406,7 +406,7 @@ class Generator(MixinMeta, ABC):
         )
         # Level
         draw.text(
-            (bar_start + 10, stats_y + stat_offset),
+            (bar_start + 10, stats_y + stat_offset + 10),
             leveltxt,
             statcolor,
             font=stats_font,
@@ -415,7 +415,7 @@ class Generator(MixinMeta, ABC):
         )
         # Messages
         draw.text(
-            (bar_start + 220, stats_y),
+            (bar_start + 220, stats_y + 10),
             message_count,
             statcolor,
             font=stats_font,
@@ -424,7 +424,7 @@ class Generator(MixinMeta, ABC):
         )
         # Voice
         draw.text(
-            (bar_start + 220, stats_y + stat_offset),
+            (bar_start + 220, stats_y + stat_offset + 10),
             voice,
             statcolor,
             font=stats_font,
@@ -662,7 +662,7 @@ class Generator(MixinMeta, ABC):
 
         # Make the semi-transparent box area blurry
         if blur:
-            blurred = card.filter(ImageFilter.GaussianBlur(3))
+            blurred = card.filter(ImageFilter.GaussianBlur(6))
             blurred = blurred.crop((240, 0, card.size[0], card.size[1]))
             card.paste(blurred, (240, 0), blurred)
         card = Image.alpha_composite(card, blank)
