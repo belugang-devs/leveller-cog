@@ -518,11 +518,7 @@ class Generator(MixinMeta, ABC):
         render_gifs: bool = False,
         blur: bool = True,
     ):
-        # Colors
-        base = self.rand_rgb()
-        namecolor = self.rand_rgb()
-        statcolor = self.rand_rgb()
-        lvlbarcolor = self.rand_rgb()
+        
         # Color distancing is more strict if user hasn't defined color
         namedistance = 240
         statdistance = 240
@@ -539,10 +535,8 @@ class Generator(MixinMeta, ABC):
             if colors["levelbar"]:
                 lvlbarcolor = colors["levelbar"]
                 lvldistance = 10
-            else:
-                lvlbarcolor = base
 
-        outlinecolor = (0, 0, 0)
+        default_fill = (0, 0, 0)
         text_bg = (0, 0, 0)
 
         # Set canvas
