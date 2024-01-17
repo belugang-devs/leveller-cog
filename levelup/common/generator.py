@@ -729,7 +729,7 @@ class Generator(MixinMeta, ABC):
         end_of_inner_bar = ((bar_end - bar_start) * xp_ratio) + bar_start
         barx, barlength = bar_start + 2, end_of_inner_bar - 2
         if barlength > barx:
-            progress_bar_draw.rounded_rectangle((barx, 203, barlength, 212), fill=statcolor, radius=89)
+            progress_bar_draw.rounded_rectangle((barx, 203, barlength, 212), fill=lvlbarcolor, radius=89)
 
         # pfp border - draw at 4x and resample down to 1x for nice smooth circles
         circle_img = Image.new("RGBA", (800, 800))
