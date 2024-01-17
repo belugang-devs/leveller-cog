@@ -397,7 +397,7 @@ class Generator(MixinMeta, ABC):
         # Stats text
         # Rank
         draw.text(
-            (bar_start + 10, stats_y + 10),
+            (bar_start + 10, stats_y + 20),
             rank,
             statcolor,
             font=stats_font,
@@ -406,7 +406,7 @@ class Generator(MixinMeta, ABC):
         )
         # Level
         draw.text(
-            (bar_start + 10, stats_y + stat_offset + 10),
+            (bar_start + 10, stats_y + stat_offset + 20),
             leveltxt,
             statcolor,
             font=stats_font,
@@ -415,7 +415,7 @@ class Generator(MixinMeta, ABC):
         )
         # Messages
         draw.text(
-            (bar_start + 220, stats_y + 10),
+            (bar_start + 220, stats_y + 20),
             message_count,
             statcolor,
             font=stats_font,
@@ -424,7 +424,7 @@ class Generator(MixinMeta, ABC):
         )
         # Voice
         draw.text(
-            (bar_start + 220, stats_y + stat_offset + 10),
+            (bar_start + 220, stats_y + stat_offset + 20),
             voice,
             statcolor,
             font=stats_font,
