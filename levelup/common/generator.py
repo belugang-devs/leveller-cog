@@ -669,7 +669,7 @@ class Generator(MixinMeta, ABC):
 
         # Username
         draw.text(
-            (260, 55),
+            (260, 60),
             name,
             namecolor,
             font=statfont,
@@ -724,17 +724,18 @@ class Generator(MixinMeta, ABC):
         bar_start = 260
         bar_end = 740
         # rectangle 0:x, 1:top y, 2:length, 3:bottom y
-        progress_bar_draw.rectangle(
+        progress_bar_draw.rounded_rectangle(
             (bar_start, 200, bar_end, 215),
             fill=(255, 255, 255, 0),
             outline=lvlbarcolor,
+            radius=90,
         )
 
         xp_ratio = user_xp_progress / next_xp_diff
         end_of_inner_bar = ((bar_end - bar_start) * xp_ratio) + bar_start
         barx, barlength = bar_start + 2, end_of_inner_bar - 2
         if barlength > barx:
-            progress_bar_draw.rectangle((barx, 203, barlength, 212), fill=statcolor)
+            progress_bar_draw.rounded_rectangle((barx, 203, barlength, 212), fill=statcolor, radius=89)
 
         # pfp border - draw at 4x and resample down to 1x for nice smooth circles
         circle_img = Image.new("RGBA", (800, 800))
