@@ -566,7 +566,7 @@ class Generator(MixinMeta, ABC):
             card = self.get_random_background()
 
         card = self.force_aspect_ratio(card, aspect_ratio)
-        card = card.convert("RGBA").resize((750, 240), Image.Resampling.NEAREST)
+        card = card.convert("RGBA").resize((770, 240), Image.Resampling.NEAREST)
         try:
             bgcolor = self.get_img_color(card)
         except Exception as e:
