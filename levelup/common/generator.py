@@ -540,7 +540,7 @@ class Generator(MixinMeta, ABC):
         text_bg = (0, 0, 0)
 
         # Set canvas
-        aspect_ratio = (27, 7)
+        aspect_ratio = (22, 7)
 
         # Get background
         available = list(self.backgrounds.iterdir()) + list(self.saved_bgs.iterdir())
